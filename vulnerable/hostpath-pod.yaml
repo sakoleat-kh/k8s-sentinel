@@ -1,0 +1,20 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: hostpath-pod
+  namespace: default
+  labels:
+    app: vulnerable
+    vulnerability: hostpath
+spec:
+  containers:
+    - name: hostpath-container
+      image: nginx:latest
+      volumeMounts:
+        - name: host-root
+          mountPath: /host
+  volumes:
+    - name: host-root
+      hostPath:
+        path: /
+        type: Directory
