@@ -1,0 +1,19 @@
+customRules:
+  custom-rules.yaml: |-
+    - rule: K8s Sentinel Container Exec
+      desc: Detect command execution inside a running container
+      condition: >
+        evt.type in (execve, execveat)
+        and container.id != host
+      output: >
+        K8s Sentinel detected command execution in a container |
+        user=%user.name
+        uid=%user.uid
+        process=%proc.name
+        command=%proc.cmdline
+        container=%container.name
+        image=%container.image.repository
+        k8s_pod=%k8s.pod.name
+        k8s_namespace=%k8s.ns.name
+      priority: WARNING
+      tags: [k8s-sentinel, container, exec]
