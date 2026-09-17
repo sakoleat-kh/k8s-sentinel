@@ -17,3 +17,44 @@ customRules:
         k8s_namespace=%k8s.ns.name
       priority: WARNING
       tags: [k8s-sentinel, container, exec]
+
+    - rule: K8s Sentinel Privileged Container Process
+      desc: Detect a process spawned inside the K8s Sentinel privileged test pod
+      condition: >
+        container.id != host
+        and container.privileged=true
+        and k8s.pod.name=privileged-pod
+      output: >
+        K8s Sentinel detected process execution in the privileged test pod |
+        user=%user.name
+        uid=%user.uid
+        process=%proc.name
+        command=%proc.cmdline
+        container=%container.name
+        image=%container.image.repository
+        k8s_pod=%k8s.pod.name
+        k8s_namespace=%k8s.ns.name
+      priority: WARNING
+      tags: [k8s-sentinel, container, privileged]
+
+    - rule: K8s Sentinel HostPath Write
+      desc: Detect a file write through the K8s Sentinel hostPath mount
+      condition: >
+        evt.type in (openat, openat2, creat)
+        and container.id != host
+        and k8s.pod.name=hostpath-pod
+        and fd.name startswith /host/
+        and evt.arg.flags contains O_WRONLY
+      output: >
+        K8s Sentinel detected write through hostPath mount |
+        user=%user.name
+        uid=%user.uid
+        process=%proc.name
+        command=%proc.cmdline
+        file=%fd.name
+        container=%container.name
+        image=%container.image.repository
+        k8s_pod=%k8s.pod.name
+        k8s_namespace=%k8s.ns.name
+      priority: WARNING
+      tags: [k8s-sentinel, container, hostpath]
