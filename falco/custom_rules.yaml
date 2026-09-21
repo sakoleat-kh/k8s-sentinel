@@ -15,6 +15,8 @@ customRules:
         image=%container.image.repository
         k8s_pod=%k8s.pod.name
         k8s_namespace=%k8s.ns.name
+        technique_id=T1609
+        tactic=Execution
       priority: WARNING
       tags: [k8s-sentinel, container, exec]
 
@@ -34,6 +36,8 @@ customRules:
         image=%container.image.repository
         k8s_pod=%k8s.pod.name
         k8s_namespace=%k8s.ns.name
+        technique_id=T1611
+        tactic=Privilege Escalation
       priority: WARNING
       tags: [k8s-sentinel, container, privileged]
 
@@ -56,6 +60,8 @@ customRules:
         image=%container.image.repository
         k8s_pod=%k8s.pod.name
         k8s_namespace=%k8s.ns.name
+        technique_id=T1611
+        tactic=Privilege Escalation
       priority: WARNING
       tags: [k8s-sentinel, container, hostpath]
 
@@ -81,6 +87,8 @@ customRules:
         image=%container.image.repository
         k8s_pod=%k8s.pod.name
         k8s_namespace=%k8s.ns.name
+        technique_id=T1041
+        tactic=Exfiltration
       priority: WARNING
       tags: [k8s-sentinel, container, network, outbound]
 
@@ -102,5 +110,7 @@ customRules:
         image=%container.image.repository
         k8s_pod=%k8s.pod.name
         k8s_namespace=%k8s.ns.name
+        technique_id=T1496
+        tactic=Impact
       priority: WARNING
       tags: [k8s-sentinel, container, cpu, cryptomining]
