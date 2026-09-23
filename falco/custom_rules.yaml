@@ -5,6 +5,7 @@ customRules:
       condition: >
         evt.type in (execve, execveat)
         and container.id != host
+        and not k8s.ns.name=kube-system
       output: >
         K8s Sentinel detected command execution in a container |
         user=%user.name
