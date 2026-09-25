@@ -1,3 +1,7 @@
+json_output: true
+json_include_output_property: true
+json_include_output_fields_property: true
+
 customRules:
   custom-rules.yaml: |-
     - rule: K8s Sentinel Container Exec
@@ -66,6 +70,35 @@ customRules:
       priority: WARNING
       tags: [k8s-sentinel, container, hostpath]
 
+    # Rule 8 comes BEFORE Rule 4 because Falco uses first-match semantics.
+    - rule: K8s Sentinel Reverse Shell Activity
+      desc: Detect an interactive shell making an unexpected external network connection
+      condition: >
+        evt.type=connect
+        and container.id != host
+        and k8s.pod.name=hostpath-pod
+        and proc.name in (sh, bash)
+        and not fd.snet in (rfc_1918_addresses)
+        and fd.rport != 53
+      output: >
+        K8s Sentinel detected possible reverse shell activity |
+        user=%user.name
+        uid=%user.uid
+        process=%proc.name
+        parent_process=%proc.pname
+        command=%proc.cmdline
+        connection=%fd.name
+        destination_ip=%fd.sip
+        destination_port=%fd.rport
+        container=%container.name
+        image=%container.image.repository
+        k8s_pod=%k8s.pod.name
+        k8s_namespace=%k8s.ns.name
+        technique_id=T1059.004
+        tactic=Execution
+      priority: WARNING
+      tags: [k8s-sentinel, container, shell, reverse-shell, t1059]
+
     - rule: K8s Sentinel Unexpected Outbound Connection
       desc: Detect an unexpected external network connection from the K8s Sentinel hostPath test pod
       condition: >
@@ -115,32 +148,3 @@ customRules:
         tactic=Impact
       priority: WARNING
       tags: [k8s-sentinel, container, cpu, cryptomining]
-
-    - rule: K8s Sentinel Reverse Shell Activity
-      desc: Detect an interactive shell making an unexpected external network connection
-      condition: >
-        evt.type=connect
-        and container.id != host
-        and k8s.pod.name=hostpath-pod
-        and proc.name in (sh, bash)
-        and fd.type in (ipv4, ipv6)
-        and not fd.snet in (rfc_1918_addresses)
-        and fd.rport != 53
-      output: >
-        K8s Sentinel detected possible reverse shell activity |
-        user=%user.name
-        uid=%user.uid
-        process=%proc.name
-        parent_process=%proc.pname
-        command=%proc.cmdline
-        connection=%fd.name
-        destination_ip=%fd.sip
-        destination_port=%fd.rport
-        container=%container.name
-        image=%container.image.repository
-        k8s_pod=%k8s.pod.name
-        k8s_namespace=%k8s.ns.name
-        technique_id=T1059.004
-        tactic=Execution
-      priority: WARNING
-      tags: [k8s-sentinel, container, shell, reverse-shell, t1059]

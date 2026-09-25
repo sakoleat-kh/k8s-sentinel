@@ -18,8 +18,34 @@ SENSITIVE_VERBS = {
 }
 
 
-def detect_event(event):
-    """Return an alert dictionary if the audit event matches Rule 6 or 7."""
+def normalize_alert(
+    *,
+    severity,
+    technique_id,
+    tactic,
+    rule_name,
+    event,
+    raw_output,
+):
+    """Return an alert using the K8s Sentinel standardized schema."""
+
+    object_ref = event.get("objectRef", {})
+
+    return {
+        "severity": severity,
+        "technique_id": technique_id,
+        "tactic": tactic,
+        "rule_name": rule_name,
+        "pod_name": None,
+        "namespace": object_ref.get("namespace"),
+        "timestamp": event.get("requestReceivedTimestamp")
+        or event.get("stageTimestamp"),
+        "raw_output": raw_output,
+    }
+
+
+def detect_event(event, raw_output):
+    """Return a standardized alert if the audit event matches Rule 6 or 7."""
 
     if event.get("stage") != "ResponseComplete":
         return None
@@ -38,16 +64,14 @@ def detect_event(event):
         and resource == "clusterrolebindings"
         and role_ref.get("name") == "cluster-admin"
     ):
-        return {
-            "rule": "K8s Sentinel ClusterRoleBinding Cluster-Admin Grant",
-            "rule_id": "7",
-            "actor": username,
-            "verb": event.get("verb"),
-            "resource": "clusterrolebindings",
-            "name": object_ref.get("name"),
-            "role": "cluster-admin",
-            "subjects": request_object.get("subjects", []),
-        }
+        return normalize_alert(
+            severity="critical",
+            technique_id="T1098",
+            tactic="Persistence",
+            rule_name="K8s Sentinel ClusterRoleBinding Cluster-Admin Grant",
+            event=event,
+            raw_output=raw_output,
+        )
 
     # Rule 6: ServiceAccount performs a sensitive API operation.
     if (
@@ -55,15 +79,14 @@ def detect_event(event):
         and event.get("verb") in SENSITIVE_VERBS
         and resource in SENSITIVE_RESOURCES
     ):
-        return {
-            "rule": "K8s Sentinel ServiceAccount Sensitive API Activity",
-            "rule_id": "6",
-            "actor": username,
-            "verb": event.get("verb"),
-            "resource": resource,
-            "namespace": object_ref.get("namespace"),
-            "name": object_ref.get("name"),
-        }
+        return normalize_alert(
+            severity="high",
+            technique_id="T1552.007",
+            tactic="Credential Access",
+            rule_name="K8s Sentinel ServiceAccount Sensitive API Activity",
+            event=event,
+            raw_output=raw_output,
+        )
 
     return None
 
@@ -80,7 +103,7 @@ def main():
         except json.JSONDecodeError:
             continue
 
-        alert = detect_event(event)
+        alert = detect_event(event, line)
 
         if alert:
             print(json.dumps(alert), flush=True)
