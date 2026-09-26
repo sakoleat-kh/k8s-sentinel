@@ -4,7 +4,7 @@ json_include_output_fields_property: true
 
 customRules:
   custom-rules.yaml: |-
-    - rule: K8s Sentinel Container Exec
+    - rule: rule_001_container_exec
       desc: Detect command execution inside a running container
       condition: >
         evt.type in (execve, execveat)
@@ -25,7 +25,7 @@ customRules:
       priority: WARNING
       tags: [k8s-sentinel, container, exec]
 
-    - rule: K8s Sentinel Privileged Container Process
+    - rule: rule_002_privileged_container_process
       desc: Detect a process spawned inside the K8s Sentinel privileged test pod
       condition: >
         container.id != host
@@ -46,7 +46,7 @@ customRules:
       priority: WARNING
       tags: [k8s-sentinel, container, privileged]
 
-    - rule: K8s Sentinel HostPath Write
+    - rule: rule_003_hostpath_write
       desc: Detect a file write through the K8s Sentinel hostPath mount
       condition: >
         evt.type in (openat, openat2, creat)
@@ -71,7 +71,7 @@ customRules:
       tags: [k8s-sentinel, container, hostpath]
 
     # Rule 8 comes BEFORE Rule 4 because Falco uses first-match semantics.
-    - rule: K8s Sentinel Reverse Shell Activity
+    - rule: rule_008_reverse_shell_activity
       desc: Detect an interactive shell making an unexpected external network connection
       condition: >
         evt.type=connect
@@ -99,7 +99,7 @@ customRules:
       priority: WARNING
       tags: [k8s-sentinel, container, shell, reverse-shell, t1059]
 
-    - rule: K8s Sentinel Unexpected Outbound Connection
+    - rule: rule_004_unexpected_outbound_connection
       desc: Detect an unexpected external network connection from the K8s Sentinel hostPath test pod
       condition: >
         evt.type=connect
@@ -126,7 +126,7 @@ customRules:
       priority: WARNING
       tags: [k8s-sentinel, container, network, outbound]
 
-    - rule: K8s Sentinel Crypto Mining Heuristic
+    - rule: rule_005_crypto_mining_heuristic
       desc: Detect a sustained CPU-intensive process pattern in the K8s Sentinel test container
       condition: >
         container
