@@ -1,0 +1,89 @@
+{
+  "test_run": "Day 13 Integration Test",
+  "date": "2026-09-26",
+  "status": "8/8 rules verified",
+  "results": [
+    {
+      "rule_number": 1,
+      "rule_name": "K8s Sentinel Container Exec",
+      "status": "PASS",
+      "technique_id": "T1609",
+      "tactic": "Execution",
+      "severity": "Warning",
+      "pod": "hostpath-pod",
+      "evidence": "Container command execution detected in hostpath-pod."
+    },
+    {
+      "rule_number": 2,
+      "rule_name": "K8s Sentinel Privileged Container Process",
+      "status": "PASS",
+      "technique_id": "T1611",
+      "tactic": "Privilege Escalation",
+      "severity": "Warning",
+      "pod": "privileged-pod",
+      "evidence": "Repeated process execution events detected in the privileged test pod."
+    },
+    {
+      "rule_number": 3,
+      "rule_name": "K8s Sentinel HostPath Write",
+      "status": "PASS",
+      "technique_id": "T1611",
+      "tactic": "Privilege Escalation",
+      "severity": "Warning",
+      "pod": "hostpath-pod",
+      "evidence": "Write through /host path detected."
+    },
+    {
+      "rule_number": 4,
+      "rule_name": "K8s Sentinel Unexpected Outbound Connection",
+      "status": "PASS",
+      "technique_id": "T1041",
+      "tactic": "Exfiltration",
+      "severity": "Warning",
+      "pod": "hostpath-pod",
+      "evidence": "External outbound connection to 104.20.23.154:80 detected."
+    },
+    {
+      "rule_number": 5,
+      "rule_name": "K8s Sentinel Crypto Mining Heuristic",
+      "status": "PASS",
+      "technique_id": "T1496",
+      "tactic": "Impact",
+      "severity": "Warning",
+      "pod": "hostpath-pod",
+      "evidence": "Sustained execution of CPU-intensive yes process detected."
+    },
+    {
+      "rule_number": 6,
+      "rule_name": "K8s Sentinel ServiceAccount Sensitive API Activity",
+      "status": "PASS",
+      "technique_id": "T1552.007",
+      "tactic": "Credential Access",
+      "severity": "high",
+      "pod": null,
+      "namespace": "default",
+      "evidence": "overpermissive-sa created a Secret and the Kubernetes audit log recorded the operation."
+    },
+    {
+      "rule_number": 7,
+      "rule_name": "K8s Sentinel ClusterRoleBinding Cluster-Admin Grant",
+      "status": "PASS",
+      "technique_id": "T1098",
+      "tactic": "Persistence",
+      "severity": "critical",
+      "pod": null,
+      "namespace": null,
+      "evidence": "overpermissive-sa created a ClusterRoleBinding granting cluster-admin."
+    },
+    {
+      "rule_number": 8,
+      "rule_name": "K8s Sentinel Reverse Shell Activity",
+      "status": "PASS",
+      "technique_id": "T1059.004",
+      "tactic": "Execution",
+      "severity": "Warning",
+      "pod": "hostpath-pod",
+      "evidence": "Interactive bash shell made an external /dev/tcp connection."
+    }
+  ]
+}
