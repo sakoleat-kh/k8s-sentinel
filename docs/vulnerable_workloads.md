@@ -93,3 +93,33 @@ They provide three different classes of security signals:
 | `overpermissive-sa-pod` | `cluster-admin`    | Kubernetes RBAC          |
 
 These fixtures will later be used to test K8s Sentinel's detection and automated remediation capabilities.
+
+---
+
+## Kyverno Admission Enforcement
+
+Starting in Phase 3, Kyverno admission policies enforce security controls on new or updated Pods.
+
+| Workload | Security Issue | Kyverno Policy | Admission Result |
+|---|---|---|---|
+| `privileged-pod` | `privileged: true` | `disallow-privileged-containers` | **Blocked** |
+| `hostpath-pod` | `hostPath: /` | `disallow-hostpath-mounts` | **Blocked** |
+| `overpermissive-sa-pod` | Pod does not explicitly require non-root execution | `require-non-root-user` | **Blocked unless compliant** |
+
+### Admission Test Results
+
+The following fresh Pod creation attempts were tested against the enforcing policies:
+
+- A privileged Pod was denied by `disallow-privileged-containers`.
+- A Pod using a `/` HostPath mount was denied by `disallow-hostpath-mounts`.
+- A Pod without `runAsNonRoot: true` was denied by `require-non-root-user`.
+
+These results demonstrate that the policies prevent non-compliant Pod specifications at Kubernetes admission time rather than merely reporting violations.
+
+### Deliberately Allowed Security Fixtures
+
+The `overpermissive-sa` ServiceAccount and its `cluster-admin` ClusterRoleBinding remain deliberately configured as security test fixtures.
+
+The current Kyverno policies validate Pod specifications. They do not remove or restrict the existing `cluster-admin` ClusterRoleBinding. This allows the RBAC configuration to remain available for testing K8s Sentinel's Kubernetes audit detection and remediation capabilities.
+
+The vulnerable workloads therefore remain controlled security fixtures, while Kyverno prevents new non-compliant Pod specifications from being admitted.

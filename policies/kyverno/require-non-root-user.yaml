@@ -1,21 +1,20 @@
 apiVersion: kyverno.io/v1
 kind: ClusterPolicy
 metadata:
-  name: disallow-privileged-containers
+  name: require-non-root-user
 spec:
   validationFailureAction: Enforce
   background: true
   rules:
-    - name: check-privileged
+    - name: check-run-as-non-root
       match:
         any:
           - resources:
               kinds:
                 - Pod
       validate:
-        message: "Privileged containers are not allowed."
+        message: "Pods must explicitly require a non-root user."
         pattern:
           spec:
-            containers:
-              - securityContext:
-                  privileged: false
+            securityContext:
+              runAsNonRoot: true
