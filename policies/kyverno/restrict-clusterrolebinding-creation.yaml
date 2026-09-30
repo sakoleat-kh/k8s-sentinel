@@ -1,0 +1,26 @@
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: restrict-clusterrolebinding-creation
+spec:
+  validationFailureAction: Enforce
+  background: true
+  rules:
+    - name: restrict-cluster-admin-binding
+      match:
+        any:
+          - resources:
+              kinds:
+                - ClusterRoleBinding
+      preconditions:
+        all:
+          - key: "{{ request.object.roleRef.name }}"
+            operator: Equals
+            value: cluster-admin
+      validate:
+        message: "Binding cluster-admin is restricted to approved subjects."
+        pattern:
+          subjects:
+            - kind: ServiceAccount
+              name: overpermissive-sa
+              namespace: default

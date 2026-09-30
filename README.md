@@ -73,3 +73,44 @@ The detection layer is fully documented, MITRE-mapped, tuned, and validated
 against the defined synthetic attack scenarios.
 
 **Next phase:** automated remediation of detected runtime threats.
+
+## Phase 3 Status
+
+**Status: Complete**
+
+Phase 3 adds Kubernetes admission control using Kyverno to prevent
+high-risk workload and RBAC configurations before they are admitted
+to the cluster.
+
+### Kyverno Policies
+
+| # | Policy | Protection | Enforcement | Status |
+|---|---|---|---|---|
+| 1 | `disallow-privileged-containers` | Prevents privileged containers | Enforce | PASS |
+| 2 | `disallow-hostpath-mounts` | Prevents HostPath mounts | Enforce | PASS |
+| 3 | `require-non-root-user` | Requires workloads to explicitly run as non-root | Enforce | PASS |
+| 4 | `restrict-clusterrolebinding-creation` | Restricts `cluster-admin` bindings to approved subjects | Enforce | PASS |
+| 5 | `require-resource-limits` | Requires CPU and memory limits | Enforce | PASS |
+
+### Validation
+
+All five Kyverno policies were tested against real Kubernetes admission
+requests.
+
+- Privileged Pod → blocked
+- HostPath Pod → blocked
+- Root-capable Pod → blocked
+- Unauthorized `cluster-admin` ClusterRoleBinding → blocked
+- Approved `default/overpermissive-sa` `cluster-admin` binding → allowed
+- Pod without CPU and memory limits → blocked
+
+All five policies report `READY=True` with admission enforcement enabled.
+
+### Phase 3 Result
+
+The project now combines runtime detection with preventive Kubernetes
+admission controls. High-risk workload configurations and unauthorized
+privilege escalation attempts can be blocked before they are admitted
+to the cluster.
+
+**Next phase:** automated remediation of detected runtime threats.
