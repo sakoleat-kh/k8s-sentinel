@@ -106,6 +106,52 @@ requests.
 
 All five policies report `READY=True` with admission enforcement enabled.
 
+### PolicyReport Integration
+
+Phase 3 also integrates Kyverno `PolicyReport` and `ClusterPolicyReport`
+results into the project reporting layer.
+
+The Python utility `scripts/policy_report_summary.py` uses the Kubernetes
+Python client to collect and summarize Kyverno policy evaluation results.
+
+It reports:
+
+- namespaced `PolicyReports`
+- cluster-scoped `ClusterPolicyReports`
+- PASS, FAIL, WARN, ERROR, and SKIP results
+- results grouped by policy and namespace
+- cluster-scoped policy results
+- violating Kubernetes resources
+
+Current cluster validation:
+
+| Metric | Result |
+|---|---:|
+| PolicyReports | 35 |
+| ClusterPolicyReports | 72 |
+| PASS | 37 |
+| FAIL | 106 |
+| WARN | 0 |
+| ERROR | 0 |
+| SKIP | 69 |
+
+The report output correctly identifies the intentionally vulnerable
+workloads, including `hostpath-pod`, `overpermissive-sa-pod`, and
+`privileged-pod`, as well as unauthorized `cluster-admin` bindings.
+
+These results represent Kyverno background-scan evaluations and should
+not be interpreted as direct counts of admission webhook denials.
+
+The Kyverno reports-controller RBAC configuration is stored in
+`config/kyverno/reports-rbac-values.yaml`.
+
+Run the summary with:
+
+```bash
+python scripts/policy_report_summary.py
+```
+
+
 ### Phase 3 Result
 
 The project now combines runtime detection with preventive Kubernetes
