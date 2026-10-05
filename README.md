@@ -152,6 +152,16 @@ python scripts/policy_report_summary.py
 ```
 
 
+### Phase 3 Documentation
+
+The five Kyverno policies are documented in:
+
+`docs/kyverno_policies.md`
+
+The documentation covers each policy's protected resource, enforcement
+mode, security rationale, validation behavior, and current scope
+limitations.
+
 ### Phase 3 Result
 
 The project now combines runtime detection with preventive Kubernetes
