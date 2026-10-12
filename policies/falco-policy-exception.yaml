@@ -1,0 +1,30 @@
+apiVersion: kyverno.io/v2
+kind: PolicyException
+metadata:
+  name: falco-agent-exception
+  namespace: falco
+spec:
+  exceptions:
+    - policyName: disallow-hostpath-mounts
+      ruleNames:
+        - check-hostpath
+    - policyName: disallow-privileged-containers
+      ruleNames:
+        - check-privileged
+    - policyName: require-non-root-user
+      ruleNames:
+        - check-run-as-non-root
+    - policyName: require-resource-limits
+      ruleNames:
+        - require-cpu-memory-limits
+  match:
+    any:
+      - resources:
+          kinds:
+            - Pod
+          namespaces:
+            - falco
+          selector:
+            matchLabels:
+              app.kubernetes.io/instance: falco
+              app.kubernetes.io/name: falco

@@ -1,0 +1,6 @@
+falco:
+  json_output: true
+  http_output:
+    enabled: true
+    url: "http://172.28.1.97:8000/falco-webhook"
+    user_agent: "k8s-sentinel-responder"
