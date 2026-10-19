@@ -1,5 +1,9 @@
-from fastapi import FastAPI, Request
 import logging
+
+from fastapi import FastAPI, HTTPException, Request
+
+from responder.app.decision import decide_action
+from responder.app.models import Alert
 
 logging.basicConfig(
     level=logging.INFO,
@@ -21,11 +25,31 @@ async def health():
 
 @app.post("/falco-webhook")
 async def falco_webhook(request: Request):
-    payload = await request.json()
+    try:
+        payload = await request.json()
+        alert = Alert.model_validate(payload)
+    except Exception as exc:
+        logger.warning("Invalid alert payload: %s", exc)
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid alert payload",
+        ) from exc
 
-    logger.info("Received Falco alert: %s", payload)
+    action = decide_action(alert)
+
+    logger.info(
+        "Alert decision: action=%s rule=%s severity=%s pod=%s namespace=%s",
+        action.value,
+        alert.rule_name,
+        alert.severity,
+        alert.pod_name,
+        alert.namespace,
+    )
 
     return {
         "status": "received",
-        "message": "Falco alert received",
+        "rule_name": alert.rule_name,
+        "severity": alert.severity,
+        "action": action.value,
+        "remediation_executed": False,
     }
