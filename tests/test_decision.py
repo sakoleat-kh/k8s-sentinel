@@ -31,6 +31,8 @@ def test_rule_maps_to_expected_action(result):
         raw_output=result["evidence"],
     )
 
+    assert decide_action(alert) == Action.LOG_ONLY
+
     severity = result["severity"].lower()
 
     if severity == "critical":
@@ -39,8 +41,7 @@ def test_rule_maps_to_expected_action(result):
         expected = Action.CORDON_NODE_AND_NOTIFY
     else:
         expected = Action.LOG_ONLY
-
-    assert decide_action(alert) == expected
+        assert decide_action(alert) == expected
 
 
 def test_critical_alert_with_pod_and_namespace_selects_kill():
