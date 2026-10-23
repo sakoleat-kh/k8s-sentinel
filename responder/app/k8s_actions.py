@@ -2,6 +2,7 @@
 
 import logging
 
+from kubernetes.client.exceptions import ApiException
 from kubernetes import client, config
 from kubernetes.config.config_exception import ConfigException
 
@@ -37,13 +38,14 @@ def create_core_v1_api() -> client.CoreV1Api:
     return client.CoreV1Api()
 
 
+
 def kill_pod(
     pod_name: str,
     namespace: str,
     *,
     api: client.CoreV1Api | None = None,
 ) -> dict:
-    """Delete only an explicitly approved test pod."""
+    """Delete only an approved test pod; treat an already-missing pod as success."""
     if not pod_name or not namespace:
         raise ValueError("pod_name and namespace are required")
 
@@ -55,13 +57,40 @@ def kill_pod(
 
     core_api = api or create_core_v1_api()
 
-    # Verify the exact target exists before requesting deletion.
-    core_api.read_namespaced_pod(name=pod_name, namespace=namespace)
-    result = core_api.delete_namespaced_pod(
-        name=pod_name,
-        namespace=namespace,
-        body=client.V1DeleteOptions(grace_period_seconds=0),
-    )
+    try:
+        core_api.read_namespaced_pod(name=pod_name, namespace=namespace)
+    except ApiException as exc:
+        if exc.status == 404:
+            logger.info(
+                "Pod already absent; treating deletion as idempotent success: "
+                "namespace=%s pod=%s",
+                namespace,
+                pod_name,
+            )
+            return {
+                "status": "already_absent",
+                "namespace": namespace,
+                "pod_name": pod_name,
+                "api_status": "not_found",
+            }
+        raise
+
+    try:
+        core_api.delete_namespaced_pod(
+            name=pod_name,
+            namespace=namespace,
+            body=client.V1DeleteOptions(grace_period_seconds=0),
+        )
+    except ApiException as exc:
+        if exc.status == 404:
+            # The pod may have disappeared between the read and delete calls.
+            return {
+                "status": "already_absent",
+                "namespace": namespace,
+                "pod_name": pod_name,
+                "api_status": "not_found",
+            }
+        raise
 
     logger.warning(
         "Pod deletion requested: namespace=%s pod=%s",

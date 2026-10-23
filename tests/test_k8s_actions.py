@@ -50,17 +50,20 @@ def test_kill_pod_rejects_invalid_or_protected_targets(pod_name, namespace):
     api.delete_namespaced_pod.assert_not_called()
 
 
-def test_kill_pod_does_not_delete_when_target_does_not_exist():
+def test_kill_pod_treats_missing_pod_as_idempotent_success():
     api = Mock()
     api.read_namespaced_pod.side_effect = ApiException(status=404)
 
-    with pytest.raises(ApiException):
-        kill_pod(
-            "k8s-sentinel-remediation-test-missing",
-            "default",
-            api=api,
-        )
+    result = kill_pod(
+        "k8s-sentinel-remediation-test-missing",
+        "default",
+        api=api,
+    )
 
+    assert result["status"] == "already_absent"
+    assert result["namespace"] == "default"
+    assert result["pod_name"] == "k8s-sentinel-remediation-test-missing"
+    assert result["api_status"] == "not_found"
     api.delete_namespaced_pod.assert_not_called()
 
 
@@ -119,3 +122,20 @@ def test_revoke_binding_rejects_system_binding():
 
     api.read_cluster_role_binding.assert_not_called()
     api.delete_cluster_role_binding.assert_not_called()
+
+def test_kill_pod_propagates_kubernetes_timeout():
+    api = Mock()
+    api.read_namespaced_pod.side_effect = ApiException(
+        status=504,
+        reason="Gateway Timeout",
+    )
+
+    with pytest.raises(ApiException) as exc_info:
+        kill_pod(
+            "k8s-sentinel-remediation-test-timeout",
+            "default",
+            api=api,
+        )
+
+    assert exc_info.value.status == 504
+    api.delete_namespaced_pod.assert_not_called()
