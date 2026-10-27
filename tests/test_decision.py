@@ -44,15 +44,36 @@ def test_rule_maps_to_expected_action(result):
         assert decide_action(alert) == expected
 
 
-def test_critical_alert_with_pod_and_namespace_selects_kill():
+
+def test_critical_approved_test_pod_selects_kill():
     alert = Alert(
         severity="critical",
         rule_name="Synthetic critical Pod alert",
-        pod_name="test-pod",
+        pod_name="k8s-sentinel-remediation-test-unit",
         namespace="default",
     )
 
     assert decide_action(alert) == Action.KILL_POD
+
+
+@pytest.mark.parametrize(
+    ("pod_name", "namespace"),
+    [
+        ("test-pod", "default"),
+        ("privileged-pod", "default"),
+        ("k8s-sentinel-remediation-test-unit", "kyverno"),
+    ],
+)
+def test_critical_unapproved_target_logs_only(pod_name, namespace):
+    alert = Alert(
+        severity="critical",
+        rule_name="Synthetic critical Pod alert",
+        pod_name=pod_name,
+        namespace=namespace,
+    )
+
+    assert decide_action(alert) == Action.LOG_ONLY
+
 
 
 def test_critical_alert_missing_pod_or_namespace_logs_only():

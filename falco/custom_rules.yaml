@@ -4,6 +4,8 @@ json_include_output_fields_property: true
 
 customRules:
   custom-rules.yaml: |-
+    - list: rfc_1918_addresses
+      items: ["10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16", "fc00::/7"]
     - rule: rule_001_container_exec
       desc: Detect command execution inside a running container
       condition: >
@@ -31,7 +33,6 @@ customRules:
       condition: >
         evt.type in (execve, execveat)
         and container.id != host
-        and container.privileged=true
         and k8s.pod.name=privileged-pod
       output: >
         K8s Sentinel detected process execution in the privileged test pod |
@@ -105,7 +106,7 @@ customRules:
       desc: Detect an unexpected external network connection from the K8s Sentinel hostPath test pod
       condition: >
         evt.type=connect
-        and container
+        and container.id != host
         and k8s.pod.name=hostpath-pod
         and fd.type in (ipv4, ipv6)
         and not fd.snet in (rfc_1918_addresses)
@@ -131,7 +132,8 @@ customRules:
     - rule: rule_005_crypto_mining_heuristic
       desc: Detect a sustained CPU-intensive process pattern in the K8s Sentinel test container
       condition: >
-        container
+        evt.type in (execve, execveat)
+        and container.id != host
         and k8s.pod.name=hostpath-pod
         and proc.name=yes
         and proc.duration > 5000000000
