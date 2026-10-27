@@ -9,7 +9,8 @@ customRules:
       condition: >
         evt.type in (execve, execveat)
         and container.id != host
-        and not k8s.ns.name=kube-system
+        and k8s.ns.name = default
+        and k8s.pod.name in (hostpath-pod, privileged-pod, overpermissive-sa-pod)
       output: >
         K8s Sentinel detected command execution in a container |
         user=%user.name
@@ -28,7 +29,8 @@ customRules:
     - rule: rule_002_privileged_container_process
       desc: Detect a process spawned inside the K8s Sentinel privileged test pod
       condition: >
-        container.id != host
+        evt.type in (execve, execveat)
+        and container.id != host
         and container.privileged=true
         and k8s.pod.name=privileged-pod
       output: >

@@ -38,6 +38,22 @@ def normalize_falco_payload(payload: dict[str, Any]) -> Alert:
         or fields.get("k8s.namespace.name")
     )
 
+    # Falco custom rules include these values in the formatted output text.
+    import re
+    technique_match = re.search(r"\btechnique_id=(T\d+(?:\.\d+)?)\b", str(output))
+    tactic_match = re.search(r"\btactic=([A-Za-z_]+)", str(output))
+
+    technique_id = (
+        payload.get("technique_id")
+        or fields.get("technique_id")
+        or (technique_match.group(1) if technique_match else None)
+    )
+    tactic = (
+        payload.get("tactic")
+        or fields.get("tactic")
+        or (tactic_match.group(1) if tactic_match else None)
+    )
+
     return Alert(
         severity=str(priority),
         rule_name=str(rule_name) if rule_name else None,
@@ -45,10 +61,9 @@ def normalize_falco_payload(payload: dict[str, Any]) -> Alert:
         namespace=str(namespace) if namespace else None,
         timestamp=payload.get("time") or payload.get("timestamp"),
         raw_output=str(output),
-        technique_id=payload.get("technique_id"),
-        tactic=payload.get("tactic"),
+        technique_id=str(technique_id) if technique_id else None,
+        tactic=str(tactic) if tactic else None,
     )
-
 
 def alert_fingerprint(alert: Alert) -> str:
     """Build a stable key from normalized alert fields."""
