@@ -1,0 +1,6 @@
+fastapi
+pydantic
+kubernetes
+httpx
+uvicorn[standard]
+pytest
