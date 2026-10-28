@@ -1,0 +1,69 @@
+json_output: true
+json_include_output_property: true
+json_include_output_fields_property: true
+customRules:
+  custom-rules.yaml: "- list: rfc_1918_addresses\n  items: [\"10.0.0.0/8\", \"172.16.0.0/12\"\
+    , \"192.168.0.0/16\", \"fc00::/7\"]\n- rule: rule_001_container_exec\n  desc:\
+    \ Detect command execution inside a running container\n  condition: >\n    evt.type\
+    \ in (execve, execveat)\n    and container.id != host\n    and k8s.ns.name = default\n\
+    \    and k8s.pod.name in (hostpath-pod, privileged-pod, overpermissive-sa-pod)\n\
+    \  output: >\n    K8s Sentinel detected command execution in a container |\n \
+    \   user=%user.name\n    uid=%user.uid\n    process=%proc.name\n    command=%proc.cmdline\n\
+    \    container=%container.name\n    image=%container.image.repository\n    k8s_pod=%k8s.pod.name\n\
+    \    k8s_namespace=%k8s.ns.name\n    technique_id=T1609\n    tactic=Execution\n\
+    \  priority: WARNING\n  tags: [k8s-sentinel, container, exec]\n\n- rule: rule_002_privileged_container_process\n\
+    \  desc: Detect a process spawned inside the K8s Sentinel privileged test pod\n\
+    \  condition: >\n    evt.type in (execve, execveat)\n    and container.id != host\n\
+    \    and k8s.pod.name=privileged-pod\n  output: >\n    K8s Sentinel detected process\
+    \ execution in the privileged test pod |\n    user=%user.name\n    uid=%user.uid\n\
+    \    process=%proc.name\n    command=%proc.cmdline\n    container=%container.name\n\
+    \    image=%container.image.repository\n    k8s_pod=%k8s.pod.name\n    k8s_namespace=%k8s.ns.name\n\
+    \    technique_id=T1611\n    tactic=Privilege Escalation\n  priority: WARNING\n\
+    \  tags: [k8s-sentinel, container, privileged]\n\n- rule: rule_003_hostpath_write\n\
+    \  desc: Detect a file write through the K8s Sentinel hostPath mount\n  condition:\
+    \ >\n    evt.type in (openat, openat2, creat)\n    and container.id != host\n\
+    \    and k8s.pod.name=hostpath-pod\n    and fd.name startswith /host/\n    and\
+    \ evt.arg.flags contains O_WRONLY\n  output: >\n    K8s Sentinel detected write\
+    \ through hostPath mount |\n    user=%user.name\n    uid=%user.uid\n    process=%proc.name\n\
+    \    command=%proc.cmdline\n    file=%fd.name\n    container=%container.name\n\
+    \    image=%container.image.repository\n    k8s_pod=%k8s.pod.name\n    k8s_namespace=%k8s.ns.name\n\
+    \    technique_id=T1611\n    tactic=Privilege Escalation\n  priority: WARNING\n\
+    \  tags: [k8s-sentinel, container, hostpath]\n\n# Rule 8 comes BEFORE Rule 4 because\
+    \ Falco uses first-match semantics.\n- rule: rule_008_reverse_shell_activity\n\
+    \  desc: Detect an interactive shell making an unexpected external network connection\n\
+    \  condition: >\n    evt.type=connect\n    and container.id != host\n    and k8s.pod.name=hostpath-pod\n\
+    \    and proc.name in (sh, bash)\n    and not fd.snet in (rfc_1918_addresses)\n\
+    \    and fd.rport != 53\n  output: >\n    K8s Sentinel detected possible reverse\
+    \ shell activity |\n    user=%user.name\n    uid=%user.uid\n    process=%proc.name\n\
+    \    parent_process=%proc.pname\n    command=%proc.cmdline\n    connection=%fd.name\n\
+    \    destination_ip=%fd.sip\n    destination_port=%fd.rport\n    container=%container.name\n\
+    \    image=%container.image.repository\n    k8s_pod=%k8s.pod.name\n    k8s_namespace=%k8s.ns.name\n\
+    \    technique_id=T1059.004\n    tactic=Execution\n  priority: WARNING\n  tags:\
+    \ [k8s-sentinel, container, shell, reverse-shell, t1059]\n\n- rule: rule_004_unexpected_outbound_connection\n\
+    \  desc: Detect an unexpected external network connection from the K8s Sentinel\
+    \ hostPath test pod\n  condition: >\n    evt.type=connect\n    and container.id\
+    \ != host\n    and k8s.pod.name=hostpath-pod\n    and fd.type in (ipv4, ipv6)\n\
+    \    and not fd.snet in (rfc_1918_addresses)\n    and fd.rport != 53\n  output:\
+    \ >\n    K8s Sentinel detected unexpected outbound connection |\n    user=%user.name\n\
+    \    uid=%user.uid\n    process=%proc.name\n    command=%proc.cmdline\n    connection=%fd.name\n\
+    \    destination_ip=%fd.sip\n    destination_port=%fd.rport\n    container=%container.name\n\
+    \    image=%container.image.repository\n    k8s_pod=%k8s.pod.name\n    k8s_namespace=%k8s.ns.name\n\
+    \    technique_id=T1041\n    tactic=Exfiltration\n  priority: WARNING\n  tags:\
+    \ [k8s-sentinel, container, network, outbound]\n\n- rule: rule_005_crypto_mining_heuristic\n\
+    \  desc: Detect a sustained CPU-intensive process pattern in the K8s Sentinel\
+    \ test container\n  condition: >\n    evt.type in (execve, execveat)\n    and\
+    \ container.id != host\n    and k8s.pod.name=hostpath-pod\n    and proc.name=yes\n\
+    \    and proc.duration > 5000000000\n  output: >\n    K8s Sentinel detected suspected\
+    \ crypto-mining activity |\n    user=%user.name\n    uid=%user.uid\n    process=%proc.name\n\
+    \    command=%proc.cmdline\n    duration_ns=%proc.duration\n    container=%container.name\n\
+    \    image=%container.image.repository\n    k8s_pod=%k8s.pod.name\n    k8s_namespace=%k8s.ns.name\n\
+    \    technique_id=T1496\n    tactic=Impact\n  priority: WARNING\n  tags: [k8s-sentinel,\
+    \ container, cpu, cryptomining]"
+falco:
+  rule_matching: all
+  json_output: true
+  json_include_output_property: true
+  json_include_output_fields_property: true
+  http_output:
+    enabled: true
+    url: http://172.28.1.97:8000/falco-webhook
